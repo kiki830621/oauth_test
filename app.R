@@ -312,36 +312,10 @@ server <- function(input, output, session) {
       if (is.null(session$userData$oidc_state)) {
         # State 不存在，可能是新 session 或過期
         cat("Session expired or new browser session detected.\n")
+        cat("Redirecting to WordPress site...\n")
         
-        # 為避免無限循環，先標記正在處理
-        if (is.null(session$userData$redirect_in_progress)) {
-          session$userData$redirect_in_progress <- TRUE
-          
-          # 產生新的 OAuth 參數並直接導向 WordPress
-          state <- b64url()
-          nonce <- b64url()
-          ver <- code_verifier()
-          chall <- code_challenge(ver)
-          
-          session$userData$oidc_state <- state
-          session$userData$oidc_nonce <- nonce
-          session$userData$code_verifier <- ver
-          
-          # 構建授權 URL
-          auth_url <- paste0(
-            AUTHZ_EP, "?response_type=code",
-            "&client_id=", URLencode(CLIENT_ID),
-            "&redirect_uri=", URLencode(REDIRECT_URI),
-            "&scope=", URLencode(SCOPES),
-            "&state=", state,
-            "&nonce=", nonce,
-            "&code_challenge_method=S256",
-            "&code_challenge=", chall
-          )
-          
-          cat("Redirecting to WordPress for authentication...\n")
-          session$sendCustomMessage("redir", auth_url)
-        }
+        # 導向到 WordPress 首頁
+        session$sendCustomMessage("redir", ISSUER)
         return()
       }
       # 用 code 換 token
