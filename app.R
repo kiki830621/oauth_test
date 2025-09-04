@@ -311,16 +311,10 @@ server <- function(input, output, session) {
       # 回呼階段：檢查是否有對應的 state
       if (is.null(session$userData$oidc_state)) {
         # State 不存在，可能是新 session 或過期
-        # 清除 URL 參數並重新開始登入流程
         cat("Session expired or new browser session detected. Restarting OAuth flow...\n")
         
-        # 延遲執行，讓頁面先載入
-        observe({
-          invalidateLater(100)  # 100ms 延遲
-          # 清除 URL 參數並重新導向
-          base_url <- strsplit(session$clientData$url_href, "?", fixed = TRUE)[[1]][1]
-          session$sendCustomMessage("redir", base_url)
-        })
+        # 直接重新開始 OAuth 流程
+        do_login_flow()
         return()
       }
       # 用 code 換 token
