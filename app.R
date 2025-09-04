@@ -14,8 +14,9 @@ CLIENT_ID     <- Sys.getenv("OIDC_CLIENT_ID")
 CLIENT_SECRET <- Sys.getenv("OIDC_CLIENT_SECRET")    # 若採公開客戶端+PKCE，可為空字串
 SCOPES        <- Sys.getenv("OIDC_SCOPES", "openid email profile")
 
-# 固定使用此 Redirect URI（與 WP 後台一致）
-REDIRECT_URI  <- "https://kyleyhl-brandedge.share.connect.posit.cloud/?oidc_cb=1"
+# 動態生成 Redirect URI（自動適應部署環境）
+# 可以用環境變數覆蓋（例如本地開發時）
+REDIRECT_URI <- Sys.getenv("OIDC_REDIRECT_URI", "")
 
 # 顯示環境變數狀態（除錯用）
 cat("=== OAuth Configuration Status ===\n")
@@ -130,6 +131,33 @@ ui <- fluidPage(
 
 # === Server ===
 server <- function(input, output, session) {
+  
+  # 動態生成 Redirect URI（如果沒有手動設定）
+  if (!nzchar(REDIRECT_URI)) {
+    # 從 session 中取得當前應用的 URL
+    observe({
+      req(session$clientData$url_protocol, session$clientData$url_hostname)
+      
+      base_url <- paste0(
+        session$clientData$url_protocol, "//",
+        session$clientData$url_hostname
+      )
+      
+      # 如果有 port，加上 port
+      if (!is.null(session$clientData$url_port) && session$clientData$url_port != "") {
+        base_url <- paste0(base_url, ":", session$clientData$url_port)
+      }
+      
+      # 如果有 pathname，加上 pathname
+      if (!is.null(session$clientData$url_pathname) && session$clientData$url_pathname != "/") {
+        base_url <- paste0(base_url, session$clientData$url_pathname)
+      }
+      
+      # 設定全域 REDIRECT_URI
+      REDIRECT_URI <<- paste0(base_url, "?oidc_cb=1")
+      cat("Dynamic Redirect URI:", REDIRECT_URI, "\n")
+    })
+  }
   
   # Reactive values for error handling
   rv <- reactiveValues(
