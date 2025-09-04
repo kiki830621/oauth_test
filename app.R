@@ -17,12 +17,26 @@ SCOPES        <- Sys.getenv("OIDC_SCOPES", "openid email profile")
 # 固定使用此 Redirect URI（與 WP 後台一致）
 REDIRECT_URI  <- "https://kyleyhl-brandedge.share.connect.posit.cloud/?oidc_cb=1"
 
+# 顯示環境變數狀態（除錯用）
+cat("=== OAuth Configuration Status ===\n")
+cat("OIDC_ISSUER:", if(nzchar(ISSUER)) paste0("[SET: ", ISSUER, "]") else "[NOT SET]", "\n")
+cat("OIDC_CLIENT_ID:", if(nzchar(CLIENT_ID)) "[SET]" else "[NOT SET]", "\n")
+cat("OIDC_CLIENT_SECRET:", if(nzchar(CLIENT_SECRET)) "[SET]" else "[NOT SET/EMPTY]", "\n")
+cat("OIDC_SCOPES:", SCOPES, "\n")
+cat("REDIRECT_URI:", REDIRECT_URI, "\n")
+cat("==================================\n")
+
 # 檢查必要變數
 if (!nzchar(ISSUER)) {
-  stop("錯誤：請設定環境變數 OIDC_ISSUER（您的 WordPress 網域）")
+  cat("ERROR: OIDC_ISSUER environment variable is not set\n")
+  cat("Please set it in Posit Connect: Settings > Environment Variables\n")
+  cat("Example: OIDC_ISSUER=https://your-wordpress-site.com\n")
+  stop("Missing required environment variable: OIDC_ISSUER")
 }
 if (!nzchar(CLIENT_ID)) {
-  stop("錯誤：請設定環境變數 OIDC_CLIENT_ID")
+  cat("ERROR: OIDC_CLIENT_ID environment variable is not set\n")
+  cat("Please set it in Posit Connect: Settings > Environment Variables\n")
+  stop("Missing required environment variable: OIDC_CLIENT_ID")
 }
 
 # === 讀取 OIDC Discovery ===
